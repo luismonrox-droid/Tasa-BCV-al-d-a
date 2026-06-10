@@ -26,25 +26,35 @@ let ultimoRegistro: any = null
 let anteriorRegistro: any = null
 
 async function cargarHistorico() {
-  const res = await fetch('/data.json')
-  historico = await res.json()
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}data.json`)
 
-  historico.sort(
-    (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
-  )
+    if (!res.ok) {
+      throw new Error(`No se pudo cargar data.json (${res.status})`)
+    }
 
-  if (historico.length > 0) {
-    ultimoRegistro = historico[historico.length - 1]
-    anteriorRegistro =
-      historico.length > 1
-        ? historico[historico.length - 2]
-        : historico[historico.length - 1]
+    historico = await res.json()
 
-    fechaCalc = ultimoRegistro.fecha
-    aplicarRangoRapido(30, false)
+    historico.sort(
+      (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+    )
 
-    dolar = ultimoRegistro.dolar
-    euro = ultimoRegistro.euro
+    if (historico.length > 0) {
+      ultimoRegistro = historico[historico.length - 1]
+      anteriorRegistro =
+        historico.length > 1
+          ? historico[historico.length - 2]
+          : historico[historico.length - 1]
+
+      fechaCalc = ultimoRegistro.fecha
+      aplicarRangoRapido(30, false)
+
+      dolar = ultimoRegistro.dolar
+      euro = ultimoRegistro.euro
+    }
+  } catch (error) {
+    console.error('Error cargando histórico:', error)
+    historico = []
   }
 }
 
@@ -126,7 +136,9 @@ function aplicarRangoRapido(dias: number, rerender = true) {
 
 function obtenerHistoricoFiltrado() {
   if (!fechaDesde || !fechaHasta) return historico
-  return historico.filter(item => item.fecha >= fechaDesde && item.fecha <= fechaHasta)
+  return historico.filter(
+    item => item.fecha >= fechaDesde && item.fecha <= fechaHasta
+  )
 }
 
 function obtenerRegistroCalculadora(fecha: string) {
@@ -453,11 +465,11 @@ function eventos() {
     input.oninput = () => {
       const valor = parseFloat(input.value) || 0
       const t = tasa === 'dolar' ? dolar : euro
-      const resultado = t > 0 ? (valor / t).toFixed(2) : '0'
+      const resultadoCalc = t > 0 ? (valor / t).toFixed(2) : '0'
 
       const resultadoEl = document.getElementById('resultado')
       if (resultadoEl) {
-        resultadoEl.innerText = 'Resultado: ' + resultado
+        resultadoEl.innerText = 'Resultado: ' + resultadoCalc
       }
     }
 
