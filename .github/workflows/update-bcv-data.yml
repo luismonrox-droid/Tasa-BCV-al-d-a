@@ -1,0 +1,39 @@
+name: Actualizar data.json con tasas BCV
+
+on:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ejecutar script de actualización
+        run: node scripts/update-bcv-data.mjs
+
+      - name: Commit y push si hubo cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add public/data.json
+
+          if git diff --cached --quiet; then
+            echo "No hubo cambios en data.json"
+          else
+            git commit -m "Actualizar data.json con tasas BCV"
+            git push
+          fi
